@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum AppointmentType {
+  INSPECTION
+  TEST_DRIVE
+  FINANCIAL_ADVICE
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id String @id @default(uuid())
+
+  firstName String
+  lastName  String
+
+  email    String @unique
+  password String
+
+  role     Role    @default(USER)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  favorites    Favorite[]
+  appointments Appointment[]
+  reviews      Review[]
+
+  @@map("users")
+}
+
+model Vehicle {
+  id String @id @default(uuid())
+
+  brand String
+  model String
+  year  Int
+
+  mileage Int
+
+  price Decimal @db.Decimal(12, 2)
+
+  marketPrice Decimal? @db.Decimal(12, 2)
+
+  description String
+
+  status VehicleStatus @default(AVAILABLE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images       VehicleImage[]
+  damages      DamageRecord[]
+  restorations RestorationHistory[]
+  favorites    Favorite[]
+  appointments Appointment[]
+
+  @@index([brand])
+  @@index([model])
+  @@index([year])
+  @@index([price])
+  @@index([status])
+  @@map("vehicles")
+}
+
+model VehicleImage {
+  id String @id @default(uuid())
+
+  imageUrl String
+
+  vehicleId String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("vehicle_images")
+}
+
+model DamageRecord {
+  id String @id @default(uuid())
+
+  damageType String
+
+  affectedParts String
+
+  acquisitionDate DateTime
+
+  vehicleId String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("damage_records")
+}
+
+model RestorationHistory {
+  id String @id @default(uuid())
+
+  repairsPerformed String
+
+  replacedParts String
+
+  repairDate DateTime
+
+  observations String?
+
+  vehicleId String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("restoration_histories")
+}
+
+model Favorite {
+  id String @id @default(uuid())
+
+  userId    String
+  vehicleId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, vehicleId])
+  @@map("favorites")
+}
+
+model Appointment {
+  id String @id @default(uuid())
+
+  appointmentDate DateTime
+
+  appointmentTime String
+
+  type AppointmentType
+
+  status AppointmentStatus @default(PENDING)
+
+  userId    String
+  vehicleId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@map("appointments")
+}
+
+model Review {
+  id String @id @default(uuid())
+
+  rating Int
+
+  comment String
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("reviews")
+}
+
+model ContactMessage {
+  id String @id @default(uuid())
+
+  name String
+
+  email String
+
+  message String
+
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
